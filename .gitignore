@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# Environments
+venv/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Data
+data/raw/
+
+# Experiments / outputs
+experiments/*/
+results/logs/
+results/tables/
+results/figures/
+results/final_report_assets/
+
+# Checkpoints
+*.pth
+*.pt
+
+# Logs
+*.log

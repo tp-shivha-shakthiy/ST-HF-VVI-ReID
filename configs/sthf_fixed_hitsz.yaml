@@ -1,0 +1,19 @@
+# ST-HF with fixed cutoff configuration for HITSZ-VCM
+data:
+  root: ./data/hitsz_vcm
+  batch_size: 32
+  num_workers: 4
+  seq_len: 8
+  img_size: [224, 224]
+
+model:
+  backbone: resnet50
+  feature_dim: 2048
+  num_classes: 100
+  sthf_cutoff: 0.5
+
+train:
+  epochs: 60
+  lr: 0.0001
+  weight_decay: 0.0005
+  milestones: [30, 50]
