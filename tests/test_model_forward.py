@@ -20,6 +20,7 @@ def test_baseline_forward_contract():
     assert outputs["logits"].shape == (2, 10)
     assert outputs["int_features"] is None
     assert outputs["int_logits"] is None
+    assert outputs["extra"]["model_type"] == "baseline"
 
 
 def test_sthf_forward_contract():
