@@ -1,6 +1,15 @@
-class IDLoss:
-    def __init__(self, num_classes=100):
-        self.num_classes = num_classes
+import torch
+import torch.nn as nn
 
-    def __call__(self, logits, targets):
-        return logits.sum()
+
+class IDLoss(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.ce = nn.CrossEntropyLoss()
+
+    def forward(self, logits, pids):
+        if logits.size(0) != pids.size(0):
+            raise ValueError(
+                f"Batch size mismatch: logits {logits.size(0)} vs pids {pids.size(0)}"
+            )
+        return self.ce(logits, pids)
