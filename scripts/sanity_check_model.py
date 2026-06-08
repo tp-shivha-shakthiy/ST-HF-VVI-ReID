@@ -4,6 +4,7 @@ import torch
 
 from models.baseline import BaselineModel
 from models.sthf_model import STHFModel
+from models.sthpf import FixedSTHPF
 
 
 def load_config(path):
@@ -57,6 +58,23 @@ def main():
     model.eval()
 
     frames = torch.randn(2, sequence_length, 3, height, width)
+
+    if config["model"].get("sthpf", {}).get("type") == "fixed":
+        fs = config["model"]["sthpf"].get("fs", 10)
+        ft = config["model"]["sthpf"].get("ft", 2)
+
+        sthpf = FixedSTHPF(fs=fs, ft=ft)
+        high_freq = sthpf(frames)
+
+        print(f"FixedSTHPF output: {high_freq.shape}")
+
+        if high_freq.shape != frames.shape:
+            raise ValueError(
+                f"FixedSTHPF output shape {high_freq.shape} does not match input {frames.shape}"
+            )
+
+        if not torch.isfinite(high_freq).all():
+            raise ValueError("FixedSTHPF output contains NaN or Inf.")
 
     with torch.no_grad():
         outputs = model(frames, modalities=["rgb", "ir"])

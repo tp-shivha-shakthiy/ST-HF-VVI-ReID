@@ -168,3 +168,22 @@ For the final comparison, fixed STHF and adaptive STHF must use the same:
 The only changed component should be:
 
 Fixed ST-HPF → Adaptive ST-HPF.
+
+## Day 4 Status — Fixed ST-HPF
+
+Implemented the fixed Spatial-Temporal High-Pass Filter.
+
+Current implementation:
+
+- Input: `[B, T, C, H, W]`
+- Output: `[B, T, C, H, W]`
+- FFT dimensions: temporal and spatial dimensions only: `T, H, W`
+- Batch and channel dimensions are not treated as frequency dimensions.
+- Fixed paper cutoffs:
+  - spatial cutoff `fs = 10`
+  - temporal cutoff `ft = 2`
+
+Current limitation:
+
+- FixedSTHPF is implemented and shape-tested.
+- Full integration into `STHFModel` happens on Day 5.

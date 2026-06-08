@@ -12,6 +12,10 @@ model:
   feature_dim: 2048
   num_classes: 100
   sthf_cutoff: 0.5
+  sthpf:
+    type: fixed
+    fs: 10
+    ft: 2
 
 dataset:
   sequence_length: 6
