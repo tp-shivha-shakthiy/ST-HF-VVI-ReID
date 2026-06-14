@@ -16,7 +16,7 @@ model:
   name: sthf_fixed
   backbone: resnet50
   feature_dim: 2048
-  num_classes: 100
+  num_classes: 500
   sthf_cutoff: 0.5
   sthpf:
     type: fixed
