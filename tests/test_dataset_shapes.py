@@ -1,5 +1,7 @@
 """Structural tests for dataset shape correctness and metadata integrity."""
 
+import os
+import tempfile
 import torch
 import pytest
 
@@ -161,3 +163,74 @@ class TestVideoSampler:
         sampler = VideoSampler(dataset, num_ids=4, clips_per_id=4, shuffle=False)
         expected = 16 // (4 * 4)
         assert len(sampler) == max(1, expected)
+
+
+class TestPIDRelabeling:
+    """Verify that HITSZVCM maps raw person IDs to contiguous labels."""
+
+    def _create_synthetic_dataset(self, tmpdir, pid_dirs, seq_len=3):
+        """Create a minimal HITSZ-VCM directory structure with dummy .jpg files."""
+        for pid_str in pid_dirs:
+            for mod in ("rgb", "ir"):
+                track_dir = os.path.join(tmpdir, "train", pid_str, mod, "D3")
+                os.makedirs(track_dir, exist_ok=True)
+                for i in range(seq_len + 1):
+                    path = os.path.join(track_dir, f"frame_{i:06d}.jpg")
+                    with open(path, "w") as f:
+                        f.write("")  # empty dummy file
+        return tmpdir
+
+    def test_relabeling_contiguous(self):
+        from data.hitsz_vcm import HITSZVCM
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            self._create_synthetic_dataset(tmpdir, ["0001", "0103", "0500"])
+            dataset = HITSZVCM(root=tmpdir, seq_len=3, split="train")
+            pids = [s["pid"] for s in dataset.samples]
+            raw_pids = [s["raw_pid"] for s in dataset.samples]
+            # Raw pids are the parsed integers
+            assert sorted(set(raw_pids)) == [1, 103, 500]
+            # Relabeled pids are contiguous 0..2
+            assert sorted(set(pids)) == [0, 1, 2]
+            # Each sample has raw_pid
+            assert all("raw_pid" in s for s in dataset.samples)
+
+    def test_relabeling_min_is_zero(self):
+        from data.hitsz_vcm import HITSZVCM
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            self._create_synthetic_dataset(tmpdir, ["0001", "0103", "0500"])
+            dataset = HITSZVCM(root=tmpdir, seq_len=3, split="train")
+            pids = [s["pid"] for s in dataset.samples]
+            assert min(pids) == 0
+
+    def test_relabeling_max_is_count_minus_one(self):
+        from data.hitsz_vcm import HITSZVCM
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            self._create_synthetic_dataset(tmpdir, ["0001", "0103", "0500"])
+            dataset = HITSZVCM(root=tmpdir, seq_len=3, split="train")
+            pids = [s["pid"] for s in dataset.samples]
+            n_unique = len(set(pids))
+            assert max(pids) == n_unique - 1
+
+    def test_relabeling_raw_pid_preserved(self):
+        from data.hitsz_vcm import HITSZVCM
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            self._create_synthetic_dataset(tmpdir, ["0001", "0103", "0500"])
+            dataset = HITSZVCM(root=tmpdir, seq_len=3, split="train")
+            for s in dataset.samples:
+                raw = s["raw_pid"]
+                label = s["pid"]
+                assert raw in (1, 103, 500)
+                assert label in (0, 1, 2)
+
+    def test_relabeling_pid2label_mapping(self):
+        from data.hitsz_vcm import HITSZVCM
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            self._create_synthetic_dataset(tmpdir, ["0001", "0103", "0500"])
+            dataset = HITSZVCM(root=tmpdir, seq_len=3, split="train")
+            assert dataset.pid2label == {1: 0, 103: 1, 500: 2}
+            assert dataset.label2pid == {0: 1, 1: 103, 2: 500}

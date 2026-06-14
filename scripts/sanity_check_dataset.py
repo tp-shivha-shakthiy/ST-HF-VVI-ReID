@@ -75,11 +75,18 @@ def main():
     # ------------------------------------------------------------------
     # 3. Dataset-level stats
     # ------------------------------------------------------------------
-    unique_pids = set()
+    unique_raw = set()
+    unique_labels = set()
     for s in dataset.samples:
-        unique_pids.add(s["pid"])
-    print(f"  Unique identities (pids): {len(unique_pids)}")
-    print(f"  Sample modalities: {set(s['modality'] for s in dataset.samples[:20])}")
+        unique_raw.add(s.get("raw_pid", s["pid"]))
+        unique_labels.add(s["pid"])
+    print(f"  Unique raw identities:     {len(unique_raw)}")
+    print(f"  Unique training labels:    {len(unique_labels)}")
+    print(f"  Label range:               {min(unique_labels)} to {max(unique_labels)}")
+    print(f"  Sample modalities:         {set(s['modality'] for s in dataset.samples[:20])}")
+    if hasattr(dataset, "label2pid") and dataset.label2pid:
+        sample_map = dict(list(dataset.label2pid.items())[:3])
+        print(f"  Label->PID mapping (first 3): {sample_map}")
     print()
 
     # ------------------------------------------------------------------
@@ -102,7 +109,10 @@ def main():
             check((h, w) == img_size, f"Sample {i}: HxW == {img_size} (got {(h, w)})")
 
         check("pid" in sample and isinstance(sample["pid"], int),
-              f"Sample {i}: pid = {sample.get('pid')}")
+              f"Sample {i}: pid (label) = {sample.get('pid')}")
+        raw = sample.get("raw_pid", "N/A")
+        check("raw_pid" in sample and isinstance(sample.get("raw_pid"), int),
+              f"Sample {i}: raw_pid = {raw}")
         check("camid" in sample and isinstance(sample["camid"], int),
               f"Sample {i}: camid = {sample.get('camid')}")
         check("modality" in sample and sample["modality"] in ("rgb", "ir"),
